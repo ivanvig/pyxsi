@@ -1,6 +1,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <optional>
+#include <map>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -21,6 +22,25 @@ const char SLV_W=5;
 const char SLV_L=6;
 const char SLV_H=7;
 const char SLV_DASH=8;
+
+const char SVLUT[2][2] = {
+    {'0', '1'},
+    {'Z', 'X'}
+};
+
+const std::map<char, uint8_t> SVILUT_A {
+    {'0', 0},
+    {'1', 1},
+    {'Z', 0},
+    {'X', 1}
+};
+
+const std::map<char, uint8_t> SVILUT_B {
+    {'0', 0},
+    {'1', 0},
+    {'Z', 1},
+    {'X', 1}
+};
 
 enum class PortDirection {INPUT, OUTPUT, INOUT};
 
@@ -84,6 +104,42 @@ class XSI {
 			loader->run(duration);
 		}
 
+#ifdef SV_SRC
+		const std::string get_port_value(std::string const& port_name) const {
+			auto const& [port, length, direction] = port_map.at(port_name);
+			/* Create a vector of chars and receive the value into it
+			 * (get_value does not allocate space) */
+
+            t_xsi_vlog_logicval port_val[(length+1)/32];
+             
+			loader->get_value(port, port_val);
+			std::string s(length, 'X');
+            for (long unsigned int i = 0; i < length; i++) {
+                uint8_t bit_a = (port_val[i/32].aVal >> (i%32)) & 1;
+                uint8_t bit_b = (port_val[i/32].bVal >> (i%32)) & 1;
+                s[length-i-1] = SVLUT[bit_b][bit_a];
+            }
+            int b = 10;//for debug, delete
+			return s;
+		}
+
+		void set_port_value(std::string const& port_name, std::string value) {
+			auto const& [port, length, direction] = port_map.at(port_name);
+
+			if(length != value.length())
+				throw std::invalid_argument("Length of vector didn't match length of port!");
+
+            t_xsi_vlog_logicval port_val[(length+1)/32] = {};
+
+            for (long unsigned int i = 0; i < length; i++) {
+                port_val[i/32].aVal |= SVILUT_A.at(value.at(length-i-1)) << (i%32);
+                port_val[i/32].bVal |= SVILUT_B.at(value.at(length-i-1)) << (i%32);
+            }
+
+            int b = 10;//for debug, delete
+			loader->put_value(port, port_val);
+		}
+#else
 		const std::string get_port_value(std::string const& port_name) const {
 			auto const& [port, length, direction] = port_map.at(port_name);
 
@@ -131,6 +187,7 @@ class XSI {
 
 			loader->put_value(port, value.data());
 		}
+#endif
 
 	private:
 		std::unique_ptr<Xsi::Loader> loader;
