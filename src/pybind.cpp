@@ -110,7 +110,7 @@ class XSI {
 			/* Create a vector of chars and receive the value into it
 			 * (get_value does not allocate space) */
 
-            t_xsi_vlog_logicval port_val[(length+1)/32];
+            t_xsi_vlog_logicval port_val[1 + (length-1)/32] = {};
              
 			loader->get_value(port, port_val);
 			std::string s(length, 'X');
@@ -129,7 +129,7 @@ class XSI {
 			if(length != value.length())
 				throw std::invalid_argument("Length of vector didn't match length of port!");
 
-            t_xsi_vlog_logicval port_val[(length+1)/32] = {};
+            t_xsi_vlog_logicval port_val[1 + (length-1)/32] = {};
 
             for (long unsigned int i = 0; i < length; i++) {
                 port_val[i/32].aVal |= SVILUT_A.at(value.at(length-i-1)) << (i%32);
