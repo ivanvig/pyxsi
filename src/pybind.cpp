@@ -104,6 +104,14 @@ class XSI {
 			loader->run(duration);
 		}
 
+		const int get_status() {
+			return loader->get_status();
+		}
+
+		const std::string get_error_info() {
+            return loader->get_error_info();
+        }
+
 #ifdef SV_SRC
 		const std::string get_port_value(std::string const& port_name) const {
 			auto const& [port, length, direction] = port_map.at(port_name);
@@ -212,6 +220,8 @@ PYBIND11_MODULE(pyxsi, m) {
 
 		.def("get_port_value", &XSI::get_port_value)
 		.def("set_port_value", &XSI::set_port_value)
-		.def("run", &XSI::run, py::arg("duration")=0);
+		.def("get_error_info", &XSI::get_error_info)
+		.def("run", &XSI::run, py::arg("duration")=0)
+		.def("get_status", &XSI::get_status);
 }
 
